@@ -1,5 +1,5 @@
-import random
-
+import shelve
+import json
 
 def start_board():
     board = {
@@ -13,11 +13,11 @@ def start_board():
 def render(board):
     print('Current board:')
     print('+---+---+---+')
-    print(f"| {board[1]} | {board[2]} | {board[3]} |")
+    print(f"| {board[1]} | {board[2]} | {board[3]} |   1  2  3")
     print('+---+---+---+')
-    print(f"| {board[4]} | {board[5]} | {board[6]} |")
+    print(f"| {board[4]} | {board[5]} | {board[6]} |   4  5  6")
     print('+---+---+---+')
-    print(f"| {board[7]} | {board[8]} | {board[9]} |")
+    print(f"| {board[7]} | {board[8]} | {board[9]} |   7  8  9")
     print('+---+---+---+')
 
 
@@ -27,7 +27,7 @@ def get_move():
     try:
         chosen_position = input("Give a position move: ")
     except KeyboardInterrupt:
-            print("You successfully exited!")
+        print("You successfully exited!")
     while chosen_position not in valid_moves:
         try:
             chosen_position = int(chosen_position)
@@ -51,25 +51,25 @@ def get_winner(board):
 
     # Rows
     if board[1] == board[2] == board[3] and board[1] != " ":
-        winner = f"Winner is {board[1]}"
+        winner = board[1]
     elif board[4] == board[5] == board[6] and board[4] != " ":
-        winner = f"Winner is {board[4]}"
+        winner = board[4]
     elif board[7] == board[8] == board[9] and board[7] != " ":
-        winner = f"Winner is {board[7]}"
+        winner = board[7]
 
     # Columns
     elif board[1] == board[4] == board[7] and board[1] != " ":
-        winner = f"Winner is {board[1]}"
+        winner = board[1]
     elif board[2] == board[5] == board[8] and board[2] != " ":
-        winner = f"Winner is {board[2]}"
+        winner = board[2]
     elif board[3] == board[6] == board[9] and board[3] != " ":
-        winner = f"Winner is {board[3]}"
+        winner = board[3]
 
     # Diagonals
     elif board[1] == board[5] == board[9] and board[1] != " ":
-        winner = f"Winner is {board[5]}"
+        winner = board[5]
     elif board[3] == board[5] == board[7] and board[3]!= " ":
-        winner = f"Winner is {board[5]}"
+        winner = board[5]
     return winner
 
 
@@ -84,53 +84,79 @@ def compMove(board):
     bestScore = -1000
     bestMove = 0
     for key in board.keys():
-       if (board[key] == " "):
-           board[key] = "O"
-           score = minimax(board, False)
-           board[key] = " "
-           if (score > bestScore):
-               bestScore = score
-               bestMove = key
+        if (board[key] == " "):
+            board[key] = "O"
+            score = minimax(board, False)
+            board[key] = " "
+            if (score > bestScore):
+                bestScore = score
+                bestMove = key
     return bestMove
 
 
 def minimax(board, isMaximizing):
-   bestScore = 0
-   if get_winner(board) == "O":
-       return 1
-   elif get_winner(board) == "X":
-       return -1
-   elif checkDraw(board):
-       return 0
-   if isMaximizing:
-       bestScore = -800
-       for key in board.keys():
-           if (board[key] == " "):
-               board[key] = "O"
-               score = minimax(board, False)
-               board[key] = " "
-               if (score > bestScore):
+    if get_winner(board) == 'O':
+        return 1     
+    elif get_winner(board) == 'X':
+        return -1
+    elif checkDraw(board):
+        return 0
+    if isMaximizing:
+        bestScore = -99
+        for key in board.keys():
+            if (board[key] == " "):
+                board[key] = "O"
+                score = minimax(board, False)
+                board[key] = " "
+                if (score > bestScore):
                     bestScore = score
-       return bestScore
-   else:
-       bestScore = 800
-       for key in board.keys():
-           if (board[key] == " "):
-               board[key] = "X"
-               score = minimax(board, True)
-               board[key] = " "
-               if (score < bestScore):
-                   bestScore = score
-       return bestScore
+        return bestScore
+    else:
+        bestScore = 99
+        for key in board.keys():
+            if (board[key] == " "):
+                board[key] = "X"
+                score = minimax(board, True)
+                board[key] = " "
+                if (score < bestScore):
+                    bestScore = score
+        return bestScore
+
+def save(board):
+    shelfFile = shelve.open('savedGame')
+    shelfFile['board'] = board
+    shelfFile.close()
+
+
+def load():
+    shelfFile = shelve.open('savedGame')
+    board = shelfFile['board']
+    shelfFile.close()
+    return board
+
+
+def whichBoard():
+    pass
+
+def saveJson(board):
+    filename = 'board.json'
+    board = board
+    with open(filename, 'w') as f:
+        json.dump(board, f)
 
 
 def play():
     counter = 0
     board = start_board()
+    inp = input("Do you want load the previous game? y/n: ")
+    if inp == 'y':
+        board = load()
     while True:
         render(board)
+        save(board)
+        saveJson(board)
         if  get_winner(board) != " ":
-            print({get_winner(board)})
+            print(f"The winner is {get_winner(board)}")
             break
         elif checkDraw(board):
             print("It's a draw")
@@ -147,3 +173,9 @@ def play():
 
 
 play()
+
+with open('board.json') as f:
+    board = json.load(f)
+
+
+print(board)
